@@ -71,6 +71,6 @@
     nbproject/build-impl.xml file. 
 
     --><target name="-post-jar">
-        	<copy todir="C:\Documents and Settings\Alexandre\Mes documents\Downloads\test\plugins\" file="${dist.jar}" />
+		<copy todir="${dist.dir}\..\..\..\..\Public\dist" file="${dist.jar}" />
         </target>
 </project>

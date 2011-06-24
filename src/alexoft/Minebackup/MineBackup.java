@@ -12,6 +12,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import org.bukkit.World;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 /**
@@ -19,20 +20,52 @@ import org.bukkit.util.config.Configuration;
  * @author Alexandre
  */
 public class MineBackup extends JavaPlugin {
-    private final Backups bck = new Backups(this);
-    private final Timer t = new Timer();
-    private  Configuration cfg;
+    private Backups bck;
+    private Timer t; 
+    private Configuration cfg;
     public List<String> worlds;
     public String bckDir;
     public long interval;
+    private TimerTask makebackup;
 
     @Override
     public void onDisable() {
+        t.cancel();
+        t.purge();
+        makebackup = null;
+        worlds = null;
+        cfg = null;
+        bck = null;
+        log(Level.INFO,"version " + this.getDescription().getVersion() + " disabled");        
     }
 
     @Override
     public void onEnable() {
-        log(Level.INFO,"loading version " + this.getDescription().getVersion());
+        bck = new Backups(this);
+        t = new Timer();
+        makebackup = new TimerTask() {
+            @Override
+            public void run() {                
+                getServer().broadcastMessage("[" + getDescription().getName() + "] Backup démarrée");
+                getServer().dispatchCommand(new ConsoleCommandSender(getServer()), "save-off");
+                getServer().dispatchCommand(new ConsoleCommandSender(getServer()), "save-all");
+                bck.MakeBackup();
+                getServer().dispatchCommand(new ConsoleCommandSender(getServer()), "save-on");
+                getServer().broadcastMessage("[" + getDescription().getName() + "] Backup terminée");
+            }            
+        };
+        
+        loadConfig();
+        resetSchedule();
+        log(Level.INFO,"version " + this.getDescription().getVersion() + " ready");
+            
+    }
+    public void resetSchedule() {
+        t.cancel();
+        t.purge();
+        t.scheduleAtFixedRate(makebackup, new Date(), interval);
+    }
+    public void loadConfig() {
         cfg = new Configuration(new File(this.getDataFolder() + "/config.yml"));
         cfg.load();
         worlds = cfg.getStringList("worlds", new ArrayList<String>());
@@ -57,20 +90,8 @@ public class MineBackup extends JavaPlugin {
         interval *= 1000;
         cfg.save();
         log(Level.INFO,worlds.size() +" worlds loaded.");
-        
-        TimerTask makebackup = new TimerTask() {
-
-            @Override
-            public void run() {
-                getServer().broadcastMessage("[" + getDescription().getName() + "] Backup démarrée");
-                bck.MakeBackup();
-                getServer().broadcastMessage("[" + getDescription().getName() + "] Backup terminée");
-            }
-            
-        };
-        t.scheduleAtFixedRate(makebackup, new Date(), interval);
-            
     }
+    
     public void log(Level level, String msg) {
         this.getServer().getLogger().log(level, "[" + this.getDescription().getName() + "] " + msg);
     }
