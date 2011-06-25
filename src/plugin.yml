@@ -1,7 +1,7 @@
 name: MineBackup
 main: alexoft.Minebackup.MineBackup
-version: 0.2
+version: 0.3
 commands:
-    backup:
-        description: backup selected worlds
-        usage: /bck (world)
+    mbck:
+        description: make a backup
+        usage: /mbck

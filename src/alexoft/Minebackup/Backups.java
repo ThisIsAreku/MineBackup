@@ -23,10 +23,15 @@ import org.bukkit.command.ConsoleCommandSender;
  */
 public class Backups extends TimerTask {
     private MineBackup plugin;
+    public boolean userStarted;
+    public String userName;
+    private boolean _bckStarted;
     
     public Backups(MineBackup plugin) {
         this.plugin = plugin;
     }
+    
+    public boolean isBackupStarted() { return _bckStarted; }
     
     public void MakeBackup() {
         try {
@@ -75,6 +80,7 @@ public class Backups extends TimerTask {
     
     private void copyWorld(World world,File tempDir) throws IOException {
         world.save();
+        this.plugin.getServer().savePlayers();
         try {
         copyDirectory(new File(world.getName()), new File(tempDir.getPath() + "/" + world.getName()));
         }catch(Exception ex) {
@@ -133,11 +139,19 @@ public class Backups extends TimerTask {
 
     @Override
     public void run() {
-        this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup démarrée");
+        _bckStarted = true;
+        if (this.userStarted) {
+            this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup démarrée par " + this.userName);
+        }else{
+            this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup démarrée");
+        }
         this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-off");
         this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-all");
         this.MakeBackup();
         this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-on");
         this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup terminée");
+        this.userName = "";
+        this.userStarted = false; 
+        _bckStarted = false;
     }
 }

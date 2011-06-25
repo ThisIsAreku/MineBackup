@@ -6,11 +6,11 @@ package alexoft.Minebackup;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.util.logging.Filter;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import org.bukkit.World;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 /**
@@ -18,7 +18,8 @@ import org.bukkit.util.config.Configuration;
  * @author Alexandre
  */
 public class MineBackup extends JavaPlugin {
-    private Backups bck;
+    private final MineBackupCommandListener commandListener = new MineBackupCommandListener(this);
+    private final Backups bck = new Backups(this);
     private Configuration cfg;
     public List<String> worlds;
     public String bckDir;
@@ -30,21 +31,33 @@ public class MineBackup extends JavaPlugin {
         this.getServer().getScheduler().cancelTasks(this);
         worlds = null;
         cfg = null;
-        bck = null;
         log(Level.INFO,"version " + this.getDescription().getVersion() + " disabled");        
     }
 
     @Override
     public void onEnable() {
-        bck = new Backups(this);
         loadConfig();
         resetSchedule();
+        
+        this.getServer().getPluginCommand("mbck").setExecutor(commandListener);
+        this.getServer().getLogger().setFilter(new LogFilter());
         log(Level.INFO,"version " + this.getDescription().getVersion() + " ready");
             
     }
     public void resetSchedule() {
         this.getServer().getScheduler().cancelTasks(this);
         this.getServer().getScheduler().scheduleSyncRepeatingTask(this, bck, interval, interval);
+    }
+    
+    public void executeSchedule(String playerName){
+        if ((playerName != null) && (!"".equals(playerName))) {
+            bck.userName = playerName;
+            bck.userStarted = true;
+        }else{
+            bck.userName = "";
+            bck.userStarted = false;
+        }
+        this.getServer().getScheduler().scheduleSyncDelayedTask(this, bck);    
     }
     public void loadConfig() {
         cfg = new Configuration(new File(this.getDataFolder() + "/config.yml"));
@@ -76,5 +89,33 @@ public class MineBackup extends JavaPlugin {
     public void log(Level level, String msg) {
         this.getServer().getLogger().log(level, "[" + this.getDescription().getName() + "] " + msg);
     }
+    public class LogFilter implements Filter {
+		String LS1 = "Disabling level saving..";
+		String LS2 = "ConsoleCommandSender: Disabling level saving..";
+		String LS3 = "Enabling level saving..";
+		String LS4 = "ConsoleCommandSender: Enabling level saving..";
+		String LS5 = "Forcing save..";
+		String LS6 = "ConsoleCommandSender: Forcing save..";
+		String LS7 = "Save complete.";
+		String LS8 = "ConsoleCommandSender: Save complete.";
+
+		@Override
+		public boolean isLoggable(LogRecord record) {
+                    if(bck.isBackupStarted()) {
+			return !record.getMessage().equals(LS1)
+			& !record.getMessage().equals(LS2)
+			& !record.getMessage().equals(LS3)
+			& !record.getMessage().equals(LS4)
+			& !record.getMessage().equals(LS5)
+			& !record.getMessage().equals(LS6)
+			& !record.getMessage().equals(LS7)
+			& !record.getMessage().equals(LS8);
+                    }else{
+                        return true;
+                    }
+
+		}
+
+	}
     
 }
