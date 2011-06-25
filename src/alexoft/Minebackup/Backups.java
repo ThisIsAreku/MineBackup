@@ -12,14 +12,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Calendar;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import org.bukkit.World;
+import org.bukkit.command.ConsoleCommandSender;
 
 /**
  *
  * @author Alexandre
  */
-public class Backups {
+public class Backups extends TimerTask {
     private MineBackup plugin;
     
     public Backups(MineBackup plugin) {
@@ -127,5 +129,15 @@ public class Backups {
             in.close();
             out.close();
         }
+    }
+
+    @Override
+    public void run() {
+        this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup démarrée");
+        this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-off");
+        this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-all");
+        this.MakeBackup();
+        this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-on");
+        this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup terminée");
     }
 }

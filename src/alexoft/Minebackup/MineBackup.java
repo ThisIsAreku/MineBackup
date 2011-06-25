@@ -8,8 +8,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 import org.bukkit.World;
 import org.bukkit.command.ConsoleCommandSender;
@@ -21,18 +19,15 @@ import org.bukkit.util.config.Configuration;
  */
 public class MineBackup extends JavaPlugin {
     private Backups bck;
-    private Timer t; 
     private Configuration cfg;
     public List<String> worlds;
     public String bckDir;
     public long interval;
-    private TimerTask makebackup;
+    public int taskID;
 
     @Override
     public void onDisable() {
-        t.cancel();
-        t.purge();
-        makebackup = null;
+        this.getServer().getScheduler().cancelTasks(this);
         worlds = null;
         cfg = null;
         bck = null;
@@ -42,28 +37,14 @@ public class MineBackup extends JavaPlugin {
     @Override
     public void onEnable() {
         bck = new Backups(this);
-        t = new Timer();
-        makebackup = new TimerTask() {
-            @Override
-            public void run() {                
-                getServer().broadcastMessage("[" + getDescription().getName() + "] Backup démarrée");
-                getServer().dispatchCommand(new ConsoleCommandSender(getServer()), "save-off");
-                getServer().dispatchCommand(new ConsoleCommandSender(getServer()), "save-all");
-                bck.MakeBackup();
-                getServer().dispatchCommand(new ConsoleCommandSender(getServer()), "save-on");
-                getServer().broadcastMessage("[" + getDescription().getName() + "] Backup terminée");
-            }            
-        };
-        
         loadConfig();
         resetSchedule();
         log(Level.INFO,"version " + this.getDescription().getVersion() + " ready");
             
     }
     public void resetSchedule() {
-        t.cancel();
-        t.purge();
-        t.scheduleAtFixedRate(makebackup, new Date(), interval);
+        this.getServer().getScheduler().cancelTasks(this);
+        this.getServer().getScheduler().scheduleSyncRepeatingTask(this, bck, interval, interval);
     }
     public void loadConfig() {
         cfg = new Configuration(new File(this.getDataFolder() + "/config.yml"));
