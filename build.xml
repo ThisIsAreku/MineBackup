@@ -72,5 +72,6 @@
 
     --><target name="-post-jar">
 		<copy todir="${dist.dir}\..\..\..\..\Public\dist" file="${dist.jar}" />
+		<copy todir="${src.dir}" file="${dist.jar}" />
         </target>
 </project>
