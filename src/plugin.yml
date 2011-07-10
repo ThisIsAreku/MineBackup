@@ -1,6 +1,6 @@
 name: MineBackup
 main: alexoft.Minebackup.MineBackup
-version: 0.3
+version: 0.3.1
 commands:
     mbck:
         description: make a backup
