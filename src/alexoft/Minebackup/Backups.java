@@ -141,15 +141,15 @@ public class Backups extends TimerTask {
     public void run() {
         _bckStarted = true;
         if (this.userStarted) {
-            this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup démarrée par " + this.userName);
+            this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup started by " + this.userName);
         }else{
-            this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup démarrée");
+            this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup started");
         }
         this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-off");
         this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-all");
         this.MakeBackup();
         this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-on");
-        this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup terminée");
+        this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup ended");
         this.userName = "";
         this.userStarted = false; 
         _bckStarted = false;
