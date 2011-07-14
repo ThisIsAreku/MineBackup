@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.logging.Level;
+import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.ConsoleCommandSender;
 
@@ -41,8 +42,6 @@ public class Backups extends Thread {
                 copyWorld(plugin.getServer().getWorld(w),tempDir);
             }
             ZipDir(tempDir);
-            global.DirUtils.deleteDirectory(tempDir);
-            this.plugin.log(Level.INFO, "Done !");
         }catch(Exception ex){
             this.plugin.log(Level.WARNING, "error; " + ex);            
         }
@@ -54,8 +53,6 @@ public class Backups extends Thread {
             tempDir.mkdirs();
             copyWorld(world,tempDir);
             ZipDir(tempDir);
-            global.DirUtils.deleteDirectory(tempDir);
-            plugin.log(Level.INFO, "Done !");
         }catch(Exception ex){
             plugin.log(Level.WARNING, "error; " + ex);            
         }
@@ -67,13 +64,7 @@ public class Backups extends Thread {
         String currentDirName = format(today.get(Calendar.DAY_OF_MONTH)) + "." + format(today.get(Calendar.MONTH) + 1)+ "." + today.get(Calendar.YEAR);
         String currentFileName = format(today.get(Calendar.HOUR_OF_DAY)) + "_" + format(today.get(Calendar.MINUTE))+ "_" + format(today.get(Calendar.SECOND));
         new File(this.plugin.bckDir + "/" + currentDirName).mkdirs();
-        try {
-            new File(this.plugin.bckDir + "/" + currentDirName + "/" + currentFileName + ".zip").createNewFile();
-            global.ZipUtils.zipDir(tempDir.getPath(), this.plugin.bckDir + "/" + currentDirName + "/" + currentFileName + ".zip");
-        }catch(Exception ex) {
-            this.plugin.log(Level.WARNING, "error; " + ex);
-            new File(this.plugin.bckDir + "/" + currentDirName + "/" + currentFileName + ".zip").delete();
-        }
+        this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(this.plugin, new ZipDir(this.plugin, this, tempDir.getPath(), this.plugin.bckDir + "/" + currentDirName + "/" + currentFileName + ".zip"));
     }
     
     private void copyWorld(World world,File tempDir) throws IOException {
@@ -91,22 +82,24 @@ public class Backups extends Thread {
         if(r.length() == 1) r = "0" + r;
         return r;
     }
-   
+   public void afterZip() {
+       plugin.log(Level.INFO, "Done !");
+       this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-on");
+       this.plugin.getServer().broadcastMessage(ChatColor.GREEN + "[" + this.plugin.getDescription().getName() + "] Backup ended");
+       this.plugin.isBackupStarted = false;
+   }
     @Override
     public void run() {
         try {
         this.plugin.isBackupStarted = true;
         if (this.userStarted) {
-            this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup started by " + this.userName);
+            this.plugin.getServer().broadcastMessage(ChatColor.GREEN + "[" + this.plugin.getDescription().getName() + "] Backup started by " + this.userName);
         }else{
-            this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup started");
+            this.plugin.getServer().broadcastMessage(ChatColor.GREEN + "[" + this.plugin.getDescription().getName() + "] Backup started");
         }
         this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-off");
         this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-all");
         this.MakeBackup();
-        this.plugin.getServer().dispatchCommand(new ConsoleCommandSender(this.plugin.getServer()), "save-on");
-        this.plugin.getServer().broadcastMessage("[" + this.plugin.getDescription().getName() + "] Backup ended");
-        this.plugin.isBackupStarted = false;
         }catch(Exception ex) {
             this.plugin.log(Level.SEVERE, ex.getMessage());
         }
