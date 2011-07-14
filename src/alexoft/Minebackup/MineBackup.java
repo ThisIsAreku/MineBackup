@@ -113,8 +113,8 @@ public class MineBackup extends JavaPlugin {
             cfg.setProperty("days-to-keep", firstDelay);
         }
 
-        interval *= 10;
-        firstDelay *= 10;
+        interval *= 20;
+        firstDelay *= 20;
         cfg.save();
         log(Level.INFO, worlds.size() + " worlds loaded.");
     }
