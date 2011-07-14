@@ -83,11 +83,9 @@ public class MineBackup extends JavaPlugin {
 
         if (worlds.isEmpty()) {
             log(Level.WARNING, "Creating 'worlds' config...");
-
             for (World w : this.getServer().getWorlds()) {
                 worlds.add(w.getName());
             }
-
             cfg.setProperty("worlds", worlds);
         }
 
