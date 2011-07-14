@@ -31,9 +31,10 @@ public class MineBackup extends JavaPlugin {
     private Configuration                   cfg;
     public long                             interval;
     public long                             firstDelay;
+    public long                             daystokeep;
     public int                              taskID;
     public List<String>                     worlds;
-    public boolean isBackupStarted;
+    public boolean                          isBackupStarted;
 
     @Override
     public void onDisable() {
@@ -56,7 +57,8 @@ public class MineBackup extends JavaPlugin {
 
     public void resetSchedule() {
         this.getServer().getScheduler().cancelTasks(this);
-        taskID = this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Backups(this), firstDelay, interval);
+        if (this.daystokeep != 0) this.getServer().getScheduler().scheduleAsyncRepeatingTask(this, new BackupsCleaner(this),0,interval*2);
+        this.taskID = this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Backups(this), firstDelay, interval);
     }
 
     public void executeSchedule(String playerName) {
@@ -77,9 +79,10 @@ public class MineBackup extends JavaPlugin {
         bckDir   = cfg.getString("backup-dir", null);
         interval = cfg.getInt("tick", -1);
         firstDelay = cfg.getInt("delay", -1);
+        daystokeep = cfg.getInt("days-to-keep", -1);
 
         if (worlds.isEmpty()) {
-            log(Level.INFO, "Creating 'worlds' config...");
+            log(Level.WARNING, "Creating 'worlds' config...");
 
             for (World w : this.getServer().getWorlds()) {
                 worlds.add(w.getName());
@@ -89,21 +92,27 @@ public class MineBackup extends JavaPlugin {
         }
 
         if (bckDir == null) {
-            log(Level.INFO, "Creating 'backup-dir' config...");
+            log(Level.WARNING, "Creating 'backup-dir' config...");
             bckDir = "minebackup";
             cfg.setProperty("backup-dir", bckDir);
         }
 
-        if (interval == -1) {
-            log(Level.INFO, "Creating 'tick' config...");
+        if (interval <= 0) {
+            log(Level.WARNING, "Creating 'tick' config...");
             interval = 3600;
             cfg.setProperty("tick", interval);
         }
 
-        if (firstDelay == -1) {
-            log(Level.INFO, "Creating 'delay' config...");
+        if (firstDelay < 0) {
+            log(Level.WARNING, "Creating 'delay' config...");
             firstDelay = 10;
             cfg.setProperty("delay", firstDelay);
+        }
+
+        if (daystokeep < 0) {
+            log(Level.WARNING, "Creating 'days-to-keep' config...");
+            daystokeep = 5;
+            cfg.setProperty("days-to-keep", firstDelay);
         }
 
         interval *= 10;

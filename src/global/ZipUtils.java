@@ -7,7 +7,7 @@ import java.util.zip.*;
  * Classe d'utilitaires pour les compressions et décompression Zip, GZip, JAR...
  * @author iubito (Sylvain Machefert)
  */
-public class OutilsZip {
+public class ZipUtils {
  
 	/** Taille du buffer pour les lectures/écritures */
 	private static final int BUFFER_SIZE = 8 * 1024;

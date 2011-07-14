@@ -5,12 +5,7 @@
 package alexoft.Minebackup;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Calendar;
 import java.util.logging.Level;
 import org.bukkit.World;
@@ -20,7 +15,7 @@ import org.bukkit.command.ConsoleCommandSender;
  *
  * @author Alexandre
  */
-public class Backups extends Thread  {
+public class Backups extends Thread {
     private MineBackup plugin;
     public boolean userStarted;
     public String userName;
@@ -46,7 +41,7 @@ public class Backups extends Thread  {
                 copyWorld(plugin.getServer().getWorld(w),tempDir);
             }
             ZipDir(tempDir);
-            deleteDirectory(tempDir);
+            global.DirUtils.deleteDirectory(tempDir);
             this.plugin.log(Level.INFO, "Done !");
         }catch(Exception ex){
             this.plugin.log(Level.WARNING, "error; " + ex);            
@@ -59,7 +54,7 @@ public class Backups extends Thread  {
             tempDir.mkdirs();
             copyWorld(world,tempDir);
             ZipDir(tempDir);
-            deleteDirectory(tempDir);
+            global.DirUtils.deleteDirectory(tempDir);
             plugin.log(Level.INFO, "Done !");
         }catch(Exception ex){
             plugin.log(Level.WARNING, "error; " + ex);            
@@ -69,12 +64,12 @@ public class Backups extends Thread  {
     public void ZipDir(File tempDir) {
         this.plugin.log(Level.INFO, "Compressing...");
         Calendar today = Calendar.getInstance();
-        String currentDirName = format(today.get(Calendar.DAY_OF_MONTH)) + "." + format(today.get(Calendar.MONTH))+ "." + today.get(Calendar.YEAR);
+        String currentDirName = format(today.get(Calendar.DAY_OF_MONTH)) + "." + format(today.get(Calendar.MONTH) + 1)+ "." + today.get(Calendar.YEAR);
         String currentFileName = format(today.get(Calendar.HOUR_OF_DAY)) + "_" + format(today.get(Calendar.MINUTE))+ "_" + format(today.get(Calendar.SECOND));
         new File(this.plugin.bckDir + "/" + currentDirName).mkdirs();
         try {
             new File(this.plugin.bckDir + "/" + currentDirName + "/" + currentFileName + ".zip").createNewFile();
-            global.OutilsZip.zipDir(tempDir.getPath(), this.plugin.bckDir + "/" + currentDirName + "/" + currentFileName + ".zip");
+            global.ZipUtils.zipDir(tempDir.getPath(), this.plugin.bckDir + "/" + currentDirName + "/" + currentFileName + ".zip");
         }catch(Exception ex) {
             this.plugin.log(Level.WARNING, "error; " + ex);
             new File(this.plugin.bckDir + "/" + currentDirName + "/" + currentFileName + ".zip").delete();
@@ -85,9 +80,9 @@ public class Backups extends Thread  {
         world.save();
         this.plugin.getServer().savePlayers();
         try {
-        copyDirectory(new File(world.getName()), new File(tempDir.getPath() + "/" + world.getName()));
+        global.DirUtils.copyDirectory(new File(world.getName()), new File(tempDir.getPath() + "/" + world.getName()));
         }catch(Exception ex) {
-            deleteDirectory(tempDir);
+            global.DirUtils.deleteDirectory(tempDir);
             throw new IOException();
         }
     }
@@ -96,50 +91,7 @@ public class Backups extends Thread  {
         if(r.length() == 1) r = "0" + r;
         return r;
     }
-    static public boolean deleteDirectory(File path) { 
-        boolean resultat = true; 
-        
-        if( path.exists() ) { 
-                File[] files = path.listFiles(); 
-                for(int i=0; i<files.length; i++) { 
-                        if(files[i].isDirectory()) { 
-                                resultat &= deleteDirectory(files[i]); 
-                        } 
-                        else { 
-                        resultat &= files[i].delete(); 
-                        } 
-                } 
-        } 
-        resultat &= path.delete(); 
-        return( resultat ); 
-}
-     public void copyDirectory(File sourceLocation , File targetLocation) throws FileNotFoundException, IOException{
-        
-        if (sourceLocation.isDirectory()) {
-            if (!targetLocation.exists()) {
-                targetLocation.mkdir();
-            }
-            
-            String[] children = sourceLocation.list();
-            for (int i=0; i<children.length; i++) {
-                copyDirectory(new File(sourceLocation, children[i]),
-                        new File(targetLocation, children[i]));
-            }
-        } else {
-            InputStream in = new FileInputStream(sourceLocation);
-            OutputStream out = new FileOutputStream(targetLocation);
-            
-            // Copy the bits from instream to outstream
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-            in.close();
-            out.close();
-        }
-    }
-
+   
     @Override
     public void run() {
         try {
