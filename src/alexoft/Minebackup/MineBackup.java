@@ -26,13 +26,14 @@ import java.util.logging.LogRecord;
  * @author Alexandre
  */
 public class MineBackup extends JavaPlugin {
-    private final MineBackupCommandListener commandListener = new MineBackupCommandListener(this);
-    private final Backups                   bck             = new Backups(this);
+    private MineBackupCommandListener commandListener;
     public String                           bckDir;
     private Configuration                   cfg;
     public long                             interval;
+    public long                             firstDelay;
     public int                              taskID;
     public List<String>                     worlds;
+    public boolean isBackupStarted;
 
     @Override
     public void onDisable() {
@@ -44,8 +45,10 @@ public class MineBackup extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        isBackupStarted = false;
         loadConfig();
         resetSchedule();
+        commandListener  = new MineBackupCommandListener(this);
         this.getServer().getPluginCommand("mbck").setExecutor(commandListener);
         this.getServer().getLogger().setFilter(new LogFilter());
         log(Level.INFO, "version " + this.getDescription().getVersion() + " ready");
@@ -53,19 +56,18 @@ public class MineBackup extends JavaPlugin {
 
     public void resetSchedule() {
         this.getServer().getScheduler().cancelTasks(this);
-        this.getServer().getScheduler().scheduleSyncRepeatingTask(this, bck, 5000, interval);
+        taskID = this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Backups(this), firstDelay, interval);
     }
 
     public void executeSchedule(String playerName) {
+        Backups manualBackup;
         if ((playerName != null) && (!"".equals(playerName))) {
-            bck.userName    = playerName;
-            bck.userStarted = true;
+            manualBackup  = new Backups(this,true,playerName);
         } else {
-            bck.userName    = "";
-            bck.userStarted = false;
+            manualBackup  = new Backups(this);
         }
 
-        this.getServer().getScheduler().scheduleSyncDelayedTask(this, bck);
+        this.getServer().getScheduler().scheduleSyncDelayedTask(this, manualBackup);
     }
 
     public void loadConfig() {
@@ -74,6 +76,7 @@ public class MineBackup extends JavaPlugin {
         worlds   = cfg.getStringList("worlds", new ArrayList<String>());
         bckDir   = cfg.getString("backup-dir", null);
         interval = cfg.getInt("tick", -1);
+        firstDelay = cfg.getInt("delay", -1);
 
         if (worlds.isEmpty()) {
             log(Level.INFO, "Creating 'worlds' config...");
@@ -97,7 +100,14 @@ public class MineBackup extends JavaPlugin {
             cfg.setProperty("tick", interval);
         }
 
-        interval *= 1000;
+        if (firstDelay == -1) {
+            log(Level.INFO, "Creating 'delay' config...");
+            firstDelay = 10;
+            cfg.setProperty("delay", firstDelay);
+        }
+
+        interval *= 10;
+        firstDelay *= 10;
         cfg.save();
         log(Level.INFO, worlds.size() + " worlds loaded.");
     }
@@ -118,7 +128,7 @@ public class MineBackup extends JavaPlugin {
 
         @Override
         public boolean isLoggable(LogRecord record) {
-            if (bck.isBackupStarted()) {
+            if (isBackupStarted) {
                 return !record.getMessage().equals(LS1) & !record.getMessage().equals(LS2)
                        & !record.getMessage().equals(LS3) & !record.getMessage().equals(LS4)
                        & !record.getMessage().equals(LS5) & !record.getMessage().equals(LS6)

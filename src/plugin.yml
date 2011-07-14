@@ -1,6 +1,7 @@
 name: MineBackup
 main: alexoft.Minebackup.MineBackup
 version: 0.3.2
+description: Auto-backup your world(s) !
 commands:
     mbck:
         description: make a backup
