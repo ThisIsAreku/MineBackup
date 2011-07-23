@@ -80,6 +80,7 @@ public class MineBackup extends JavaPlugin {
     }
 
     public void loadConfig() {
+    	boolean rewrite = false;
         cfg = new Configuration(new File(this.getDataFolder() + "/config.yml"));
         cfg.load();
         worlds = cfg.getStringList("worlds", new ArrayList<String>());
@@ -94,33 +95,38 @@ public class MineBackup extends JavaPlugin {
                 worlds.add(w.getName());
             }
             cfg.setProperty("worlds", worlds);
+            rewrite = true;
         }
 
         if (bckDir == null) {
             log(Level.WARNING, "Creating 'backup-dir' config...");
             bckDir = "minebackup";
             cfg.setProperty("backup-dir", bckDir);
+            rewrite = true;
         }
 
         if (interval <= 0) {
             log(Level.WARNING, "Creating 'tick' config...");
             interval = 3600;
             cfg.setProperty("tick", interval);
+            rewrite = true;
         }
 
         if (firstDelay < 0) {
             log(Level.WARNING, "Creating 'delay' config...");
             firstDelay = 10;
             cfg.setProperty("delay", firstDelay);
+            rewrite = true;
         }
 
         if (daystokeep < 0) {
             log(Level.WARNING, "Creating 'days-to-keep' config...");
             daystokeep = 5;
             cfg.setProperty("days-to-keep", firstDelay);
+            rewrite = true;
         }
         
-        if (this.getServer().getWorlds().size() != worlds.size()) {
+        /*if (this.getServer().getWorlds().size() != worlds.size()) {
             for (String n : worlds) {
                 if (this.getServer().getWorld(n) == null) {
                     this.log(
@@ -129,8 +135,9 @@ public class MineBackup extends JavaPlugin {
                     worlds.remove(n);
                 }
             }
-        }
-        cfg.setProperty("worlds", worlds);
+            cfg.setProperty("worlds", worlds);
+            rewrite = true;
+        }*/
         
         String headerText = "# available worlds :\r\n";
 
@@ -141,7 +148,7 @@ public class MineBackup extends JavaPlugin {
         
         interval *= 20;
         firstDelay *= 20;
-        cfg.save();
+        if (rewrite) cfg.save();
         log(Level.INFO, worlds.size() + " worlds loaded.");
     }
 

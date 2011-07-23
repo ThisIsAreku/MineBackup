@@ -51,7 +51,7 @@ public class BackupsCleaner extends Thread {
                                 " + deleting " + children[i]
                                 + " due to age limitation (" + diffDays
                                 + " day(s))");
-                        global.DirUtils.deleteDirectory(
+                        alexoft.Minebackup.DirUtils.deleteDirectory(
                                 new File(this.plugin.bckDir + "/" + children[i]));
                         bckDeleted += 1;
                     }

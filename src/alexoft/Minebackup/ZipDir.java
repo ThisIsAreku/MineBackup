@@ -27,8 +27,8 @@ public class ZipDir extends Thread {
 
         try {
             new File(this.destDir).createNewFile();
-            global.ZipUtils.zipDir(this.srcDir, this.destDir);
-            global.DirUtils.deleteDirectory(new File(this.srcDir));
+            alexoft.Minebackup.ZipUtils.zipDir(this.srcDir, this.destDir);
+            alexoft.Minebackup.DirUtils.deleteDirectory(new File(this.srcDir));
             this.parent.afterZip();
         } catch (Exception ex) {
             this.plugin.log(Level.WARNING, "error; " + ex);

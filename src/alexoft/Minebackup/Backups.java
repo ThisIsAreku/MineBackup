@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.logging.Level;
+
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.ConsoleCommandSender;
@@ -49,6 +50,11 @@ public class Backups extends Thread {
 
     public void MakeBackup(World world) {
         try {
+        	if(world == null) {
+                this.plugin.log(
+                        "world not found..");    
+                return;
+        	}
             this.plugin.log(Level.INFO,
                     "Backing up '" + world.getName() + "'...");
             File tempDir = new File(String.valueOf(Math.random()));
@@ -83,10 +89,10 @@ public class Backups extends Thread {
         world.save();
         this.plugin.getServer().savePlayers();
         try {
-            global.DirUtils.copyDirectory(new File(world.getName()),
+            alexoft.Minebackup.DirUtils.copyDirectory(new File(world.getName()),
                     new File(tempDir.getPath() + "/" + world.getName()));
         } catch (Exception ex) {
-            global.DirUtils.deleteDirectory(tempDir);
+            alexoft.Minebackup.DirUtils.deleteDirectory(tempDir);
             throw new IOException();
         }
     }
