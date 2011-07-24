@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.logging.Level;
 
-import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.ConsoleCommandSender;
 
@@ -50,11 +49,10 @@ public class Backups extends Thread {
 
     public void MakeBackup(World world) {
         try {
-        	if(world == null) {
-                this.plugin.log(
-                        "world not found..");    
+            if (world == null) {
+                this.plugin.log("world not found..");    
                 return;
-        	}
+            }
             this.plugin.log(Level.INFO,
                     "Backing up '" + world.getName() + "'...");
             File tempDir = new File(String.valueOf(Math.random()));
@@ -110,9 +108,7 @@ public class Backups extends Thread {
         plugin.log(Level.INFO, "Done !");
         this.plugin.getServer().dispatchCommand(
                 new ConsoleCommandSender(this.plugin.getServer()), "save-on");
-        this.plugin.getServer().broadcastMessage(
-                ChatColor.GREEN + "[" + this.plugin.getDescription().getName()
-                + "] Backup ended");
+        this.plugin.getServer().broadcastMessage(this.plugin.msg_BackupEnded);
         this.plugin.isBackupStarted = false;
     }
 
@@ -122,14 +118,11 @@ public class Backups extends Thread {
             this.plugin.isBackupStarted = true;
             if (this.userStarted) {
                 this.plugin.getServer().broadcastMessage(
-                        ChatColor.GREEN + "["
-                        + this.plugin.getDescription().getName()
-                        + "] Backup started by " + this.userName);
+                        this.plugin.msg_BackupStarted.replaceAll("%player%",
+                        this.userName));
             } else {
                 this.plugin.getServer().broadcastMessage(
-                        ChatColor.GREEN + "["
-                        + this.plugin.getDescription().getName()
-                        + "] Backup started");
+                        this.plugin.msg_BackupStarted);
             }
             this.plugin.getServer().dispatchCommand(
                     new ConsoleCommandSender(this.plugin.getServer()),

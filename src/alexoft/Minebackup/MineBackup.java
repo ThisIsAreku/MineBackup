@@ -2,15 +2,20 @@
 package alexoft.Minebackup;
 
 
-import org.bukkit.World;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.config.Configuration;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
+import org.bukkit.ChatColor;
+import org.bukkit.World;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.config.Configuration;
 
 
 /**
@@ -27,6 +32,9 @@ public class MineBackup extends JavaPlugin {
     public int                              taskID;
     public List<String>                     worlds;
     public boolean                          isBackupStarted;
+    public String							msg_BackupStarted;
+    public String							msg_BackupEnded;
+    public String							msg_BackupStartedUser;
 
     @Override
     public void onDisable() {
@@ -80,14 +88,37 @@ public class MineBackup extends JavaPlugin {
     }
 
     public void loadConfig() {
-    	boolean rewrite = false;
+        boolean rewrite = false;
+        String[] allowedKeys = new String[] {
+            "worlds", "backup-dir", "interval", "delay", "days-to-keep",
+            "messages.backup-started", "messages.backup-started-user",
+            "messages.backup-ended"};
+
         cfg = new Configuration(new File(this.getDataFolder() + "/config.yml"));
         cfg.load();
         worlds = cfg.getStringList("worlds", new ArrayList<String>());
         bckDir = cfg.getString("backup-dir", null);
-        interval = cfg.getInt("tick", -1);
+        interval = cfg.getInt("interval", -1);
         firstDelay = cfg.getInt("delay", -1);
         daystokeep = cfg.getInt("days-to-keep", -1);
+        msg_BackupStarted = cfg.getString("messages.backup-started", null);
+        msg_BackupStartedUser = cfg.getString("messages.backup-started-user",
+                null);
+        msg_BackupEnded = cfg.getString("messages.backup-ended", null);
+        
+        int i = 0;
+        Set<String> cles = cfg.getAll().keySet();
+        Iterator<String> it = cles.iterator();
+
+        while (it.hasNext()) {
+            String key = it.next();
+
+            if (!Arrays.asList(allowedKeys).contains(key)) {
+                cfg.removeProperty(key);
+                i++;
+            }
+        }
+        log("Removed " + i + " unknown key(s)");
 
         if (worlds.isEmpty()) {
             log(Level.WARNING, "Creating 'worlds' config...");
@@ -106,9 +137,9 @@ public class MineBackup extends JavaPlugin {
         }
 
         if (interval <= 0) {
-            log(Level.WARNING, "Creating 'tick' config...");
+            log(Level.WARNING, "Creating 'interval' config...");
             interval = 3600;
-            cfg.setProperty("tick", interval);
+            cfg.setProperty("interval", interval);
             rewrite = true;
         }
 
@@ -125,19 +156,41 @@ public class MineBackup extends JavaPlugin {
             cfg.setProperty("days-to-keep", firstDelay);
             rewrite = true;
         }
-        
-        /*if (this.getServer().getWorlds().size() != worlds.size()) {
-            for (String n : worlds) {
-                if (this.getServer().getWorld(n) == null) {
-                    this.log(
-                            "World '" + n
-                            + "' don't exist, removing from config...");
-                    worlds.remove(n);
-                }
-            }
-            cfg.setProperty("worlds", worlds);
+        if (msg_BackupStarted == null) {
+            log(Level.WARNING, "Creating 'backup-started' config...");
+            msg_BackupStarted = ChatColor.GREEN + "[MineBackup] Backup started";
+            cfg.setProperty("messages.backup-started", msg_BackupStarted);
             rewrite = true;
-        }*/
+        }
+
+        if (msg_BackupStartedUser == null) {
+            log(Level.WARNING, "Creating 'backup-started-user' config...");
+            msg_BackupStartedUser = ChatColor.GREEN
+                    + "[MineBackup] Backup started by %player%";
+            cfg.setProperty("messages.backup-started-user",
+                    msg_BackupStartedUser);
+            rewrite = true;
+        }
+
+        if (msg_BackupEnded == null) {
+            log(Level.WARNING, "Creating 'backup-ended' config...");
+            msg_BackupEnded = ChatColor.GREEN + "[MineBackup] Backup ended";
+            cfg.setProperty("messages.backup-ended", msg_BackupEnded);
+            rewrite = true;
+        }
+
+        /* if (this.getServer().getWorlds().size() != worlds.size()) {
+         for (String n : worlds) {
+         if (this.getServer().getWorld(n) == null) {
+         this.log(
+         "World '" + n
+         + "' don't exist, removing from config...");
+         worlds.remove(n);
+         }
+         }
+         cfg.setProperty("worlds", worlds);
+         rewrite = true;
+         }*/
         
         String headerText = "# available worlds :\r\n";
 
@@ -148,7 +201,9 @@ public class MineBackup extends JavaPlugin {
         
         interval *= 20;
         firstDelay *= 20;
-        if (rewrite) cfg.save();
+        if (rewrite) {
+            cfg.save();
+        }
         log(Level.INFO, worlds.size() + " worlds loaded.");
     }
 
