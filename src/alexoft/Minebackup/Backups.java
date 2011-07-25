@@ -43,25 +43,25 @@ public class Backups extends Thread {
             }
             ZipDir(tempDir);
         } catch (Exception ex) {
-            this.plugin.log(Level.WARNING, "error; " + ex);            
+            this.plugin.logException(ex);          
         }
     }
 
     public void MakeBackup(World world) {
         try {
             if (world == null) {
-                this.plugin.log("world not found..");    
-                return;
+                this.plugin.log("world not found.. check your config file");    
+            }else{
+	            this.plugin.log(Level.INFO,
+	                    "Backing up '" + world.getName() + "'...");
+	            File tempDir = new File(String.valueOf(Math.random()));
+	
+	            tempDir.mkdirs();
+	            copyWorld(world, tempDir);
+	            ZipDir(tempDir);
             }
-            this.plugin.log(Level.INFO,
-                    "Backing up '" + world.getName() + "'...");
-            File tempDir = new File(String.valueOf(Math.random()));
-
-            tempDir.mkdirs();
-            copyWorld(world, tempDir);
-            ZipDir(tempDir);
         } catch (Exception ex) {
-            plugin.log(Level.WARNING, "error; " + ex);            
+            this.plugin.logException(ex);              
         }
     }
     
@@ -111,28 +111,41 @@ public class Backups extends Thread {
         this.plugin.getServer().broadcastMessage(this.plugin.msg_BackupEnded);
         this.plugin.isBackupStarted = false;
     }
+    
+    private void backupRun() {
+        this.plugin.isBackupStarted = true;
+        if (this.userStarted) {
+            this.plugin.getServer().broadcastMessage(
+                    this.plugin.msg_BackupStarted.replaceAll("%player%",
+                    this.userName));
+        } else {
+            this.plugin.getServer().broadcastMessage(
+                    this.plugin.msg_BackupStarted);
+        }
+        this.plugin.getServer().dispatchCommand(
+                new ConsoleCommandSender(this.plugin.getServer()), "save-off");
+        this.plugin.getServer().dispatchCommand(
+                new ConsoleCommandSender(this.plugin.getServer()), "save-all");
+        this.MakeBackup();
+    }
 
     @Override
     public void run() {
         try {
-            this.plugin.isBackupStarted = true;
-            if (this.userStarted) {
-                this.plugin.getServer().broadcastMessage(
-                        this.plugin.msg_BackupStarted.replaceAll("%player%",
-                        this.userName));
+            if (this.plugin.pauseWhenNoPlayers) {
+                if (this.plugin.getServer().getOnlinePlayers().length > 0) {
+                    this.plugin.isBackupDelayed = false;
+                    backupRun();
+                } else {
+                    this.plugin.isBackupDelayed = true;
+                    this.plugin.log("No players online, backup delayed");
+                }
             } else {
-                this.plugin.getServer().broadcastMessage(
-                        this.plugin.msg_BackupStarted);
+                this.plugin.isBackupDelayed = false;
+                backupRun();
             }
-            this.plugin.getServer().dispatchCommand(
-                    new ConsoleCommandSender(this.plugin.getServer()),
-                    "save-off");
-            this.plugin.getServer().dispatchCommand(
-                    new ConsoleCommandSender(this.plugin.getServer()),
-                    "save-all");
-            this.MakeBackup();
         } catch (Exception ex) {
-            this.plugin.log(Level.SEVERE, ex.getMessage());
+            this.plugin.logException(ex);
         }
     }
 }

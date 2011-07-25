@@ -14,6 +14,8 @@ import java.util.logging.LogRecord;
 
 import org.bukkit.ChatColor;
 import org.bukkit.World;
+import org.bukkit.event.Event;
+import org.bukkit.event.Event.Priority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
@@ -32,10 +34,12 @@ public class MineBackup extends JavaPlugin {
     public int                              taskID;
     public List<String>                     worlds;
     public boolean                          isBackupStarted;
+    public boolean                          pauseWhenNoPlayers;
     public String							msg_BackupStarted;
     public String							msg_BackupEnded;
     public String							msg_BackupStartedUser;
-
+    public boolean							isBackupDelayed;
+    
     @Override
     public void onDisable() {
         try {
@@ -51,14 +55,19 @@ public class MineBackup extends JavaPlugin {
     @Override
     public void onEnable() {
         try {
+            log("ThisIsAreku present MINEBACKUP, v" + this.getDescription().getVersion());
             isBackupStarted = false;
             loadConfig();
             resetSchedule();
             commandListener = new MineBackupCommandListener(this);
             this.getServer().getPluginCommand("mbck").setExecutor(
                     commandListener);
+            if (this.pauseWhenNoPlayers) {
+            	this.getServer().getPluginManager().registerEvent(Event.Type.PLAYER_JOIN, new MineBackupPlayerListener(this),
+                        Priority.Monitor, this);
+            }
             this.getServer().getLogger().setFilter(new LogFilter());
-            log("version " + this.getDescription().getVersion() + " ready");
+            log("sucessfully loaded version " + this.getDescription().getVersion());
         } catch (Exception e) {
             this.logException(e);
         }
@@ -91,8 +100,8 @@ public class MineBackup extends JavaPlugin {
         boolean rewrite = false;
         String[] allowedKeys = new String[] {
             "worlds", "backup-dir", "interval", "delay", "days-to-keep",
-            "messages.backup-started", "messages.backup-started-user",
-            "messages.backup-ended"};
+            "pause-when-no-players", "messages.backup-started",
+            "messages.backup-started-user", "messages.backup-ended"};
 
         cfg = new Configuration(new File(this.getDataFolder() + "/config.yml"));
         cfg.load();
@@ -101,6 +110,9 @@ public class MineBackup extends JavaPlugin {
         interval = cfg.getInt("interval", -1);
         firstDelay = cfg.getInt("delay", -1);
         daystokeep = cfg.getInt("days-to-keep", -1);
+        String s_pauseWhenNoPlayers = cfg.getString("pause-when-no-players",
+                null);
+
         msg_BackupStarted = cfg.getString("messages.backup-started", null);
         msg_BackupStartedUser = cfg.getString("messages.backup-started-user",
                 null);
@@ -118,8 +130,22 @@ public class MineBackup extends JavaPlugin {
                 i++;
             }
         }
-        log("Removed " + i + " unknown key(s)");
+        if (i > 0) {
+            rewrite = true;
+            log("Removed " + i + " unknown key(s)");
+        }
 
+        if (s_pauseWhenNoPlayers == "true") {
+            pauseWhenNoPlayers = true;
+        } else if (s_pauseWhenNoPlayers == "false") {
+            pauseWhenNoPlayers = false;
+        } else {
+            log(Level.WARNING, "Creating 'pause-when-no-players' config...");
+            pauseWhenNoPlayers = false;
+            cfg.setProperty("pause-when-no-players", pauseWhenNoPlayers);
+            rewrite = true;
+        }
+        
         if (worlds.isEmpty()) {
             log(Level.WARNING, "Creating 'worlds' config...");
             for (World w : this.getServer().getWorlds()) {
@@ -192,16 +218,15 @@ public class MineBackup extends JavaPlugin {
          rewrite = true;
          }*/
         
-        String headerText = "# available worlds :\r\n";
-
-        for (World w : this.getServer().getWorlds()) {
-            headerText += "# -" + w.getName() + "\r\n";
-        }
-        cfg.setHeader(headerText);
-        
         interval *= 20;
         firstDelay *= 20;
-        if (rewrite) {
+        if (rewrite) {            
+            String headerText = "# available worlds :\r\n";
+
+            for (World w : this.getServer().getWorlds()) {
+                headerText += "# - " + w.getName() + "\r\n";
+            }
+            cfg.setHeader(headerText);
             cfg.save();
         }
         log(Level.INFO, worlds.size() + " worlds loaded.");
