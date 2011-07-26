@@ -38,8 +38,13 @@ public class Backups extends Thread {
 
             tempDir.mkdirs();
             for (String w:plugin.worlds) {
-                plugin.log(Level.INFO, " * " + w);
-                copyWorld(plugin.getServer().getWorld(w), tempDir);
+            	World world = plugin.getServer().getWorld(w);
+                if (world == null) {
+                    this.plugin.log("world '" + w + "' not found.. check your config file");    
+                }else{
+	                plugin.log(Level.INFO, " * " + w);
+	                copyWorld(world, tempDir);
+                }
             }
             ZipDir(tempDir);
         } catch (Exception ex) {
