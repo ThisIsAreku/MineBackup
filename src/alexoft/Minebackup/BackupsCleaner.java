@@ -45,7 +45,8 @@ public class BackupsCleaner extends Thread {
             if (children != null) {
                 for (int i = 0; i < children.length; i++) {
                     dirDate = this.dateFormat.parse(children[i]);
-                    diffDays = daysBetween(currDate, dirDate);
+                    diffDays = daysBetween(dirDate, currDate);
+                    this.plugin.log(children[i] + " : " + diffDays + " days ?");
                     if (diffDays > this.plugin.daystokeep) {
                         this.plugin.log(Level.INFO,
                                 " + deleting " + children[i]

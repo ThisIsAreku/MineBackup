@@ -38,15 +38,18 @@ public class Backups extends Thread {
 
             tempDir.mkdirs();
             for (String w:plugin.worlds) {
-            	World world = plugin.getServer().getWorld(w);
+                World world = plugin.getServer().getWorld(w);
+
                 if (world == null) {
-                    this.plugin.log("world '" + w + "' not found.. check your config file");    
-                }else{
-	                plugin.log(Level.INFO, " * " + w);
-	                copyWorld(world, tempDir);
+                    this.plugin.log(
+                            "world '" + w
+                            + "' not found.. check your config file");    
+                } else {
+                    plugin.log(Level.INFO, " * " + w);
+                    copyWorld(world, tempDir);
                 }
             }
-            ZipDir(tempDir);
+            compressDir(tempDir);
         } catch (Exception ex) {
             this.plugin.logException(ex);          
         }
@@ -56,22 +59,21 @@ public class Backups extends Thread {
         try {
             if (world == null) {
                 this.plugin.log("world not found.. check your config file");    
-            }else{
-	            this.plugin.log(Level.INFO,
-	                    "Backing up '" + world.getName() + "'...");
-	            File tempDir = new File(String.valueOf(Math.random()));
+            } else {
+                this.plugin.log(Level.INFO,
+                        "Backing up '" + world.getName() + "'...");
+                File tempDir = new File(String.valueOf(Math.random()));
 	
-	            tempDir.mkdirs();
-	            copyWorld(world, tempDir);
-	            ZipDir(tempDir);
+                tempDir.mkdirs();
+                copyWorld(world, tempDir);
+                compressDir(tempDir);
             }
         } catch (Exception ex) {
             this.plugin.logException(ex);              
         }
     }
     
-    public void ZipDir(File tempDir) {
-        this.plugin.log(Level.INFO, "Compressing...");
+    public void compressDir(File tempDir) {
         Calendar today = Calendar.getInstance();
         String currentDirName = format(today.get(Calendar.DAY_OF_MONTH)) + "."
                 + format(today.get(Calendar.MONTH) + 1) + "."
@@ -81,11 +83,22 @@ public class Backups extends Thread {
                 + format(today.get(Calendar.SECOND));
 
         new File(this.plugin.bckDir + "/" + currentDirName).mkdirs();
-        this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
-                this.plugin,
-                new ZipDir(this.plugin, this, tempDir.getPath(),
-                this.plugin.bckDir + "/" + currentDirName + "/"
-                + currentFileName + ".zip"));
+        if (this.plugin.compressionEnabled) {
+            this.plugin.log(Level.INFO, "Compressing...");
+            this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
+                    this.plugin,
+                    new ZipDir(this.plugin, this, tempDir.getPath(),
+                    this.plugin.bckDir + "/" + currentDirName + "/"
+                    + currentFileName + ".zip"));
+        } else {
+            this.plugin.log(Level.INFO, "Copying...");
+            this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
+                    this.plugin,
+                    new CopyDir(this.plugin, this, tempDir.getPath(),
+                    this.plugin.bckDir + "/" + currentDirName + "/"
+                    + currentFileName));
+    		
+        }
     }
     
     private void copyWorld(World world, File tempDir) throws IOException {
@@ -109,7 +122,7 @@ public class Backups extends Thread {
         return r;
     }
 
-    public void afterZip() {
+    public void afterRun() {
         plugin.log(Level.INFO, "Done !");
         this.plugin.getServer().dispatchCommand(
                 new ConsoleCommandSender(this.plugin.getServer()), "save-on");

@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.zip.Deflater;
+import java.util.zip.ZipOutputStream;
 
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -39,6 +41,10 @@ public class MineBackup extends JavaPlugin {
     public String							msg_BackupEnded;
     public String							msg_BackupStartedUser;
     public boolean							isBackupDelayed;
+    public boolean							compressionEnabled;
+    public int								compressionMode;
+    public int								compressionLevel;
+    public boolean							backupPlugins;
     
     @Override
     public void onDisable() {
@@ -55,7 +61,9 @@ public class MineBackup extends JavaPlugin {
     @Override
     public void onEnable() {
         try {
-            log("ThisIsAreku present MINEBACKUP, v" + this.getDescription().getVersion());
+            log(
+                    "ThisIsAreku present MINEBACKUP, v"
+                            + this.getDescription().getVersion());
             isBackupStarted = false;
             loadConfig();
             resetSchedule();
@@ -63,11 +71,15 @@ public class MineBackup extends JavaPlugin {
             this.getServer().getPluginCommand("mbck").setExecutor(
                     commandListener);
             if (this.pauseWhenNoPlayers) {
-            	this.getServer().getPluginManager().registerEvent(Event.Type.PLAYER_JOIN, new MineBackupPlayerListener(this),
-                        Priority.Monitor, this);
+                this.getServer().getPluginManager().registerEvent(
+                        Event.Type.PLAYER_JOIN,
+                        new MineBackupPlayerListener(this), Priority.Monitor,
+                        this);
             }
             this.getServer().getLogger().setFilter(new LogFilter());
-            log("sucessfully loaded version " + this.getDescription().getVersion());
+            log(
+                    "sucessfully loaded version "
+                            + this.getDescription().getVersion());
         } catch (Exception e) {
             this.logException(e);
         }
@@ -101,7 +113,9 @@ public class MineBackup extends JavaPlugin {
         String[] allowedKeys = new String[] {
             "worlds", "backup-dir", "interval", "delay", "days-to-keep",
             "pause-when-no-players", "messages.backup-started",
-            "messages.backup-started-user", "messages.backup-ended"};
+            "messages.backup-started-user", "messages.backup-ended",
+            "compression.enabled", "compression.level", "compression.mode",
+            "backup-plugins"};
 
         cfg = new Configuration(new File(this.getDataFolder() + "/config.yml"));
         cfg.load();
@@ -118,6 +132,15 @@ public class MineBackup extends JavaPlugin {
                 null);
         msg_BackupEnded = cfg.getString("messages.backup-ended", null);
         
+        String s_compressionEnabled = cfg.getString("compression.enabled", null);
+        String s_compressionMode = cfg.getString("compression.mode", null);
+        String s_compressionLevel = cfg.getString("compression.level", null);
+
+        compressionLevel = Deflater.BEST_COMPRESSION;
+        compressionMode = ZipOutputStream.DEFLATED;
+    	
+        String s_backupPlugins = cfg.getString("backup-plugins", null);
+    			
         int i = 0;
         Set<String> cles = cfg.getAll().keySet();
         Iterator<String> it = cles.iterator();
@@ -145,7 +168,52 @@ public class MineBackup extends JavaPlugin {
             cfg.setProperty("pause-when-no-players", pauseWhenNoPlayers);
             rewrite = true;
         }
+
+        if (s_backupPlugins == "true") {
+            backupPlugins = true;
+        } else if (s_backupPlugins == "false") {
+            backupPlugins = false;
+        } else {// TODO: backup-plugins
+             log(Level.WARNING, "Creating 'backup-plugins' config...");
+             backupPlugins = false;
+             cfg.setProperty("backup-plugins", backupPlugins);
+             rewrite = true;
+       }
+
+        if (s_compressionEnabled == "true") {
+            compressionEnabled = true;
+        } else if (s_compressionEnabled == "false") {
+            compressionEnabled = false;
+        } else {
+            log(Level.WARNING, "Creating 'compression.enabled' config...");
+            compressionEnabled = true;
+            cfg.setProperty("compression.enabled", compressionEnabled);
+            rewrite = true;
+        }
+        if (compressionEnabled) {
+            if (s_compressionLevel == null) {
+                log(Level.WARNING, "Creating 'compression.level' config...");
+                s_compressionLevel = "BEST_COMPRESSION";
+                cfg.setProperty("compression.level", s_compressionLevel);
+                rewrite = true;
+            } else {
+                if (s_compressionLevel == "BEST_COMPRESSION") {
+                    compressionLevel = Deflater.BEST_COMPRESSION;
+                } else if (s_compressionLevel == "BEST_SPEED") {
+                    compressionLevel = Deflater.BEST_SPEED;
+                } else if (s_compressionLevel == "NO_COMPRESSION") {
+                    compressionLevel = Deflater.NO_COMPRESSION;
+                }
+            }
         
+            if (s_compressionMode == null) {
+                log(Level.WARNING, "Creating 'compression.mode' config...");
+                s_compressionMode = "DEFLATED";
+                cfg.setProperty("compression.mode", s_compressionMode);
+                rewrite = true;
+            } else {// TODO: compressionMethod
+            }
+        }
         if (worlds.isEmpty()) {
             log(Level.WARNING, "Creating 'worlds' config...");
             for (World w : this.getServer().getWorlds()) {
@@ -183,14 +251,15 @@ public class MineBackup extends JavaPlugin {
             rewrite = true;
         }
         if (msg_BackupStarted == null) {
-            log(Level.WARNING, "Creating 'backup-started' config...");
+            log(Level.WARNING, "Creating 'messages.backup-started' config...");
             msg_BackupStarted = ChatColor.GREEN + "[MineBackup] Backup started";
             cfg.setProperty("messages.backup-started", msg_BackupStarted);
             rewrite = true;
         }
 
         if (msg_BackupStartedUser == null) {
-            log(Level.WARNING, "Creating 'backup-started-user' config...");
+            log(Level.WARNING,
+                    "Creating 'messages.backup-started-user' config...");
             msg_BackupStartedUser = ChatColor.GREEN
                     + "[MineBackup] Backup started by %player%";
             cfg.setProperty("messages.backup-started-user",
@@ -199,7 +268,7 @@ public class MineBackup extends JavaPlugin {
         }
 
         if (msg_BackupEnded == null) {
-            log(Level.WARNING, "Creating 'backup-ended' config...");
+            log(Level.WARNING, "Creating 'messages.backup-ended' config...");
             msg_BackupEnded = ChatColor.GREEN + "[MineBackup] Backup ended";
             cfg.setProperty("messages.backup-ended", msg_BackupEnded);
             rewrite = true;

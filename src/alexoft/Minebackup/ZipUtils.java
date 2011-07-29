@@ -225,7 +225,7 @@ public class ZipUtils {
      * @throws FileNotFoundException
      * @throws IOException
      */
-    public static void zipDir(String dirsource, String zipdest)
+    public static void zipDir(String dirsource, String zipdest, int method, int level)
         throws FileNotFoundException, IOException {
  
         // Création d'un flux d'écriture vers un fichier
@@ -248,8 +248,11 @@ public class ZipUtils {
                     try {
                         // Compression maximale
                         try {
-                            zos.setMethod(ZipOutputStream.DEFLATED);
-                            zos.setLevel(Deflater.BEST_COMPRESSION);
+                            zos.setMethod(method);
+                            zos.setLevel(level);
+                           
+                            /* zos.setMethod(ZipOutputStream.DEFLATED);
+                             zos.setLevel(Deflater.BEST_COMPRESSION);*/
                         } catch (Exception ignor) {}
                         zipDir(dirsource, null, zos);
                     } finally {

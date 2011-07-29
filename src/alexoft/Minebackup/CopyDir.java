@@ -9,7 +9,7 @@ import java.util.logging.Level;
  *
  * @author Alexandre
  */
-public class ZipDir extends Thread {
+public class CopyDir extends Thread {
     public Backups parent;
     public MineBackup plugin;
     public String srcDir;
@@ -17,7 +17,7 @@ public class ZipDir extends Thread {
     public int method;
     public int level;
     
-    public ZipDir(MineBackup plugin, Backups parent, String source, String dest) {
+    public CopyDir(MineBackup plugin, Backups parent, String source, String dest) {
         this.plugin = plugin;
         this.parent = parent;
         this.destDir = dest;
@@ -28,9 +28,8 @@ public class ZipDir extends Thread {
     public void run() {
 
         try {
-            new File(this.destDir).createNewFile();
-            alexoft.Minebackup.ZipUtils.zipDir(this.srcDir, this.destDir,
-                    this.plugin.compressionMode, this.plugin.compressionLevel);
+            new File(this.destDir).mkdirs();
+            alexoft.Minebackup.DirUtils.copyDirectory(this.srcDir, this.destDir);
             alexoft.Minebackup.DirUtils.deleteDirectory(new File(this.srcDir));
             this.parent.afterRun();
         } catch (Exception ex) {

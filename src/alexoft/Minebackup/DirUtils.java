@@ -65,4 +65,9 @@ public class DirUtils {
             out.close();
         }
     }
+
+    public static void copyDirectory(String srcDir, String destDir) throws FileNotFoundException, IOException {
+        // TODO Auto-generated method stub
+        copyDirectory(new File(srcDir), new File(destDir));
+    }
 }
