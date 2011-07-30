@@ -5,7 +5,7 @@ import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 
@@ -14,17 +14,17 @@ import java.util.logging.Level;
  * @author Alexandre
  */
 public class BackupsCleaner extends Thread {
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("MM.dd.yyyy");
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd");
     private MineBackup plugin;
      
     public BackupsCleaner(MineBackup plugin) {
         this.plugin = plugin;
     }
      
-    static final long ONE_HOUR = 60 * 60 * 1000L;
-    public static long daysBetween(Date d1, Date d2) {
-        return ((d2.getTime() - d1.getTime() + ONE_HOUR) / (ONE_HOUR * 24));
-    }
+    public static long getDifference(Calendar a, Calendar b, TimeUnit units) {
+        return
+           units.convert(b.getTimeInMillis() - a.getTimeInMillis(), TimeUnit.MILLISECONDS);
+      }
      
     @Override
     public void run() {
@@ -34,18 +34,19 @@ public class BackupsCleaner extends Thread {
             }
             String[] children = new File(this.plugin.bckDir).list();
             Calendar today = Calendar.getInstance();
-            Date currDate = this.dateFormat.parse(
-                    format(today.get(Calendar.DAY_OF_MONTH)) + "."
+            Calendar fday = Calendar.getInstance();
+            today.setTime(this.dateFormat.parse(
+                    format(today.get(Calendar.YEAR)) + "."
                     + format(today.get(Calendar.MONTH) + 1) + "."
-                    + today.get(Calendar.YEAR));
-            Date dirDate;
+                    + today.get(Calendar.DAY_OF_MONTH)));
             long diffDays;
             int bckDeleted = 0;
 
             if (children != null) {
+            	
                 for (int i = 0; i < children.length; i++) {
-                    dirDate = this.dateFormat.parse(children[i]);
-                    diffDays = daysBetween(dirDate, currDate);
+                	fday.setTime(this.dateFormat.parse(children[i]));
+                    diffDays = getDifference(fday, today, TimeUnit.DAYS);
                     this.plugin.log(children[i] + " : " + diffDays + " days ?");
                     if (diffDays > this.plugin.daystokeep) {
                         this.plugin.log(Level.INFO,

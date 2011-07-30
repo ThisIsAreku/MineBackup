@@ -34,7 +34,7 @@ public class Backups extends Thread {
     public void MakeBackup() {
         try {
             this.plugin.log(Level.INFO, "Starting backup...");
-            File tempDir = new File(String.valueOf(Math.random()));
+            File tempDir = new File("minebackup_temp", String.valueOf(Math.random()));
 
             tempDir.mkdirs();
             for (String w:plugin.worlds) {
@@ -75,9 +75,9 @@ public class Backups extends Thread {
     
     public void compressDir(File tempDir) {
         Calendar today = Calendar.getInstance();
-        String currentDirName = format(today.get(Calendar.DAY_OF_MONTH)) + "."
+        String currentDirName = format(today.get(Calendar.YEAR)) + "."
                 + format(today.get(Calendar.MONTH) + 1) + "."
-                + today.get(Calendar.YEAR);
+                + today.get(Calendar.DAY_OF_MONTH);
         String currentFileName = format(today.get(Calendar.HOUR_OF_DAY)) + "_"
                 + format(today.get(Calendar.MINUTE)) + "_"
                 + format(today.get(Calendar.SECOND));
