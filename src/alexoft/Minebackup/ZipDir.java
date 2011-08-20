@@ -2,7 +2,6 @@ package alexoft.Minebackup;
 
 
 import java.io.File;
-import java.util.logging.Level;
 
 
 /**
@@ -32,9 +31,8 @@ public class ZipDir extends Thread {
             alexoft.Minebackup.ZipUtils.zipDir(this.srcDir, this.destDir,
                     this.plugin.compressionMode, this.plugin.compressionLevel);
             alexoft.Minebackup.DirUtils.deleteDirectory(new File(this.srcDir));
-            this.parent.afterRun();
         } catch (Exception ex) {
-            this.plugin.log(Level.WARNING, "error; " + ex);
+            this.plugin.logException(ex,this.destDir);
             new File(this.destDir).delete();
         }
     }

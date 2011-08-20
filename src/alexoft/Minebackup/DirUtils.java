@@ -36,6 +36,17 @@ public class DirUtils {
         resultat &= path.delete(); 
         return(resultat); 
     }
+    static public boolean delete(File path) { 
+        boolean resultat = true; 
+        
+        if (path.exists()) { 
+        	if(path.isDirectory()) {
+        		deleteDirectory(path);
+        	}
+           resultat &= path.delete(); 
+        } 
+        return(resultat); 
+    }
 
     public static void copyDirectory(File sourceLocation, File targetLocation) throws FileNotFoundException, IOException {
         

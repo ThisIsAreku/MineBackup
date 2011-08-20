@@ -29,6 +29,7 @@ import org.bukkit.util.config.Configuration;
 public class MineBackup extends JavaPlugin {
     private MineBackupCommandListener commandListener;
     public String                           bckDir;
+    public String                           bckTempDir;
     private Configuration                   cfg;
     public long                             interval;
     public long                             firstDelay;
@@ -45,6 +46,7 @@ public class MineBackup extends JavaPlugin {
     public int								compressionMode;
     public int								compressionLevel;
     public boolean							backupPlugins;
+    public boolean							debug;
     
     @Override
     public void onDisable() {
@@ -61,8 +63,7 @@ public class MineBackup extends JavaPlugin {
     @Override
     public void onEnable() {
         try {
-            log(
-                    "ThisIsAreku present MINEBACKUP, v"
+            log("ThisIsAreku present MINEBACKUP, v"
                             + this.getDescription().getVersion());
             isBackupStarted = false;
             loadConfig();
@@ -111,19 +112,21 @@ public class MineBackup extends JavaPlugin {
     public void loadConfig() {
         boolean rewrite = false;
         String[] allowedKeys = new String[] {
-            "worlds", "backup-dir", "interval", "delay", "days-to-keep",
+            "worlds", "backup-dir", "backup-temp-dir", "interval", "delay", "days-to-keep",
             "pause-when-no-players", "messages.backup-started",
             "messages.backup-started-user", "messages.backup-ended",
             "compression.enabled", "compression.level", "compression.mode",
-            "backup-plugins"};
+            "backup-plugins", "debug"};
 
         cfg = new Configuration(new File(this.getDataFolder() + "/config.yml"));
         cfg.load();
         worlds = cfg.getStringList("worlds", new ArrayList<String>());
         bckDir = cfg.getString("backup-dir", null);
+        bckTempDir = cfg.getString("backup-temp-dir", null);
         interval = cfg.getInt("interval", -1);
         firstDelay = cfg.getInt("delay", -1);
         daystokeep = cfg.getInt("days-to-keep", -1);
+        debug = cfg.getBoolean("debug", false);
         String s_pauseWhenNoPlayers = cfg.getString("pause-when-no-players",
                 null);
 
@@ -230,6 +233,13 @@ public class MineBackup extends JavaPlugin {
             rewrite = true;
         }
 
+        if (bckTempDir == null) {
+            log(Level.WARNING, "Creating 'backup-temp-dir' config...");
+            bckTempDir = "minebackup_temp";
+            cfg.setProperty("backup-temp-dir", bckTempDir);
+            rewrite = true;
+        }
+
         if (interval <= 0) {
             log(Level.WARNING, "Creating 'interval' config...");
             interval = 3600;
@@ -309,15 +319,24 @@ public class MineBackup extends JavaPlugin {
         log(Level.INFO, l);
     }
     
-    public void logException(Throwable e) {
+    public void logException(Throwable e, String debugText) {
         log(Level.SEVERE, "---------------------------------------");
         log(Level.SEVERE, "--- an unexpected error has occured ---");
         log(Level.SEVERE, "-- please send line below to the dev --");
         log(Level.SEVERE, e.toString() + " : " + e.getLocalizedMessage());
-        for (StackTraceElement t:e.getStackTrace()) {  
+        for (StackTraceElement t:e.getStackTrace()) { 
             log(Level.SEVERE, "\t" + t.toString());
         }
+        if(debug && !debugText.equals("")) {
+            log(Level.SEVERE, "--------- DEBUG ---------");
+            log(Level.SEVERE, debugText);
+
+        }
         log(Level.SEVERE, "---------------------------------------");
+    }
+    
+    public void logException(Throwable e) {
+    	logException(e,"");
     }
 
     public class LogFilter implements Filter {

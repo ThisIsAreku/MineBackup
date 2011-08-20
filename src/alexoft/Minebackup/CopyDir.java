@@ -31,8 +31,7 @@ public class CopyDir extends Thread {
             new File(this.destDir).mkdirs();
             alexoft.Minebackup.DirUtils.copyDirectory(this.srcDir, this.destDir);
             alexoft.Minebackup.DirUtils.deleteDirectory(new File(this.srcDir));
-            this.parent.afterRun();
-        } catch (Exception ex) {
+           } catch (Exception ex) {
             this.plugin.log(Level.WARNING, "error; " + ex);
             new File(this.destDir).delete();
         }

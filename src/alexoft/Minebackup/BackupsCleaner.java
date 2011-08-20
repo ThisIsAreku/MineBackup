@@ -14,7 +14,7 @@ import java.util.logging.Level;
  * @author Alexandre
  */
 public class BackupsCleaner extends Thread {
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd");
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m-s");
     private MineBackup plugin;
      
     public BackupsCleaner(MineBackup plugin) {
@@ -32,33 +32,40 @@ public class BackupsCleaner extends Thread {
             if (this.plugin.daystokeep == 0) {
                 return;
             }
-            String[] children = new File(this.plugin.bckDir).list();
             Calendar today = Calendar.getInstance();
             Calendar fday = Calendar.getInstance();
             today.setTime(this.dateFormat.parse(
-                    format(today.get(Calendar.YEAR)) + "."
-                    + format(today.get(Calendar.MONTH) + 1) + "."
-                    + today.get(Calendar.DAY_OF_MONTH)));
+            		format(today.get(Calendar.YEAR)) + "-" + 
+                    		format(today.get(Calendar.MONTH) + 1) + "-" + 
+                    		format(today.get(Calendar.DAY_OF_MONTH)) + "-" + 
+                    		format(today.get(Calendar.HOUR_OF_DAY)) + "-" +
+                            format(today.get(Calendar.MINUTE)) + "-" +
+                            format(today.get(Calendar.SECOND))));
             long diffDays;
             int bckDeleted = 0;
-
-            if (children != null) {
-            	
+String[] worlds  = new File(this.plugin.bckDir).list();
+if (worlds != null) {	
+    for (int w = 0; w < worlds.length; w++) {
+            String[] children = new File(this.plugin.bckDir + "/" + worlds[w]).list();
+            if (children != null) {            	
                 for (int i = 0; i < children.length; i++) {
                 	fday.setTime(this.dateFormat.parse(children[i]));
                     diffDays = getDifference(fday, today, TimeUnit.DAYS);
-                    this.plugin.log(children[i] + " : " + diffDays + " days ?");
+                    if(this.plugin.debug) this.plugin.log(worlds[w] + ":" + children[i] + " : " + diffDays + " days ?");
                     if (diffDays > this.plugin.daystokeep) {
                         this.plugin.log(Level.INFO,
-                                " + deleting " + children[i]
+                                " + deleting " + worlds[w] + ":" + children[i]
                                 + " due to age limitation (" + diffDays
                                 + " day(s))");
-                        alexoft.Minebackup.DirUtils.deleteDirectory(
-                                new File(this.plugin.bckDir + "/" + children[i]));
+                        alexoft.Minebackup.DirUtils.delete(
+                                new File(this.plugin.bckDir + "/" + worlds[w] + "/" + children[i]));
                         bckDeleted += 1;
                     }
                 }
             }
+        	
+        }
+}
             this.plugin.log(Level.INFO,
                     " + " + bckDeleted + " backup(s) deleted");
         } catch (ParseException ex) {

@@ -34,9 +34,6 @@ public class Backups extends Thread {
     public void MakeBackup() {
         try {
             this.plugin.log(Level.INFO, "Starting backup...");
-            File tempDir = new File("minebackup_temp", String.valueOf(Math.random()));
-
-            tempDir.mkdirs();
             for (String w:plugin.worlds) {
                 World world = plugin.getServer().getWorld(w);
 
@@ -46,10 +43,9 @@ public class Backups extends Thread {
                             + "' not found.. check your config file");    
                 } else {
                     plugin.log(Level.INFO, " * " + w);
-                    copyWorld(world, tempDir);
+                    MakeBackup(world);
                 }
             }
-            compressDir(tempDir);
         } catch (Exception ex) {
             this.plugin.logException(ex);          
         }
@@ -60,43 +56,34 @@ public class Backups extends Thread {
             if (world == null) {
                 this.plugin.log("world not found.. check your config file");    
             } else {
-                this.plugin.log(Level.INFO,
-                        "Backing up '" + world.getName() + "'...");
-                File tempDir = new File(String.valueOf(Math.random()));
+                /*this.plugin.log(Level.INFO,
+                        "Backing up '" + world.getName() + "'...");*/
+                File tempDir = new File(this.plugin.bckTempDir, String.valueOf(Math.random()));
 	
                 tempDir.mkdirs();
                 copyWorld(world, tempDir);
-                compressDir(tempDir);
+                compressDir(tempDir, world.getName());
             }
         } catch (Exception ex) {
             this.plugin.logException(ex);              
         }
     }
     
-    public void compressDir(File tempDir) {
-        Calendar today = Calendar.getInstance();
-        String currentDirName = format(today.get(Calendar.YEAR)) + "."
-                + format(today.get(Calendar.MONTH) + 1) + "."
-                + today.get(Calendar.DAY_OF_MONTH);
-        String currentFileName = format(today.get(Calendar.HOUR_OF_DAY)) + "_"
-                + format(today.get(Calendar.MINUTE)) + "_"
-                + format(today.get(Calendar.SECOND));
-
-        new File(this.plugin.bckDir + "/" + currentDirName).mkdirs();
+    public void compressDir(File tempDir,String worldName) {
+    	String BACKUP_NAME = getBackupName();
+    	if(!new File(this.plugin.bckDir + "/" + worldName).exists()) new File(this.plugin.bckDir + "/" + worldName).mkdirs();
         if (this.plugin.compressionEnabled) {
-            this.plugin.log(Level.INFO, "Compressing...");
+            this.plugin.log(Level.INFO, "\tCompressing...");
             this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
                     this.plugin,
                     new ZipDir(this.plugin, this, tempDir.getPath(),
-                    this.plugin.bckDir + "/" + currentDirName + "/"
-                    + currentFileName + ".zip"));
+                    this.plugin.bckDir + "/" + worldName + "/" + BACKUP_NAME + ".zip"));
         } else {
-            this.plugin.log(Level.INFO, "Copying...");
+            this.plugin.log(Level.INFO, "\tCopying...");
             this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
                     this.plugin,
                     new CopyDir(this.plugin, this, tempDir.getPath(),
-                    this.plugin.bckDir + "/" + currentDirName + "/"
-                    + currentFileName));
+                    this.plugin.bckDir + "/" + worldName + "/" + BACKUP_NAME));
     		
         }
     }
@@ -120,6 +107,15 @@ public class Backups extends Thread {
             r = "0" + r;
         }
         return r;
+    }
+    private String getBackupName() {
+        Calendar today = Calendar.getInstance();
+        return format(today.get(Calendar.YEAR)) + "-" + 
+        		format(today.get(Calendar.MONTH) + 1) + "-" + 
+        		format(today.get(Calendar.DAY_OF_MONTH)) + "-" + 
+        		format(today.get(Calendar.HOUR_OF_DAY)) + "-" +
+                format(today.get(Calendar.MINUTE)) + "-" +
+                format(today.get(Calendar.SECOND));
     }
 
     public void afterRun() {
@@ -145,6 +141,7 @@ public class Backups extends Thread {
         this.plugin.getServer().dispatchCommand(
                 new ConsoleCommandSender(this.plugin.getServer()), "save-all");
         this.MakeBackup();
+        afterRun();
     }
 
     @Override
