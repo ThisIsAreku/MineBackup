@@ -29,7 +29,7 @@ public class BackupsCleaner extends Thread {
     @Override
     public void run() {
         try {
-            if (this.plugin.daystokeep == 0) {
+            if (this.plugin.config.daystokeep == 0) {
                 return;
             }
             Calendar today = Calendar.getInstance();
@@ -43,22 +43,22 @@ public class BackupsCleaner extends Thread {
                             format(today.get(Calendar.SECOND))));
             long diffDays;
             int bckDeleted = 0;
-String[] worlds  = new File(this.plugin.bckDir).list();
+String[] worlds  = new File(this.plugin.config.bckDir).list();
 if (worlds != null) {	
     for (int w = 0; w < worlds.length; w++) {
-            String[] children = new File(this.plugin.bckDir + "/" + worlds[w]).list();
+            String[] children = new File(this.plugin.config.bckDir + "/" + worlds[w]).list();
             if (children != null) {            	
                 for (int i = 0; i < children.length; i++) {
                 	fday.setTime(this.dateFormat.parse(children[i]));
                     diffDays = getDifference(fday, today, TimeUnit.DAYS);
-                    if(this.plugin.debug) this.plugin.log(worlds[w] + ":" + children[i] + " : " + diffDays + " days ?");
-                    if (diffDays > this.plugin.daystokeep) {
+                    if(this.plugin.config.debug) this.plugin.log(worlds[w] + ":" + children[i] + " : " + diffDays + " days ?");
+                    if (diffDays > this.plugin.config.daystokeep) {
                         this.plugin.log(Level.INFO,
                                 " + deleting " + worlds[w] + ":" + children[i]
                                 + " due to age limitation (" + diffDays
                                 + " day(s))");
                         alexoft.Minebackup.DirUtils.delete(
-                                new File(this.plugin.bckDir + "/" + worlds[w] + "/" + children[i]));
+                                new File(this.plugin.config.bckDir + "/" + worlds[w] + "/" + children[i]));
                         bckDeleted += 1;
                     }
                 }

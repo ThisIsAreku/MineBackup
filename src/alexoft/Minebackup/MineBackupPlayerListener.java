@@ -21,12 +21,12 @@ public class MineBackupPlayerListener extends PlayerListener {
 
     @Override
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if (this.plugin.pauseWhenNoPlayers) {
-            if (this.plugin.isBackupDelayed) {
+        if (this.plugin.config.pauseWhenNoPlayers) {
+            if (this.plugin.config.isBackupDelayed) {
                 if (!this.plugin.isBackupStarted) {
                     this.plugin.log("Performing delayed backup");
                     this.plugin.executeSchedule(null);
-                    this.plugin.isBackupDelayed = false;
+                    this.plugin.config.isBackupDelayed = false;
                 }
             }
         }

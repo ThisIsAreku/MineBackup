@@ -29,7 +29,7 @@ public class ZipDir extends Thread {
         try {
             new File(this.destDir).createNewFile();
             alexoft.Minebackup.ZipUtils.zipDir(this.srcDir, this.destDir,
-                    this.plugin.compressionMode, this.plugin.compressionLevel);
+                    this.plugin.config.compressionMode, this.plugin.config.compressionLevel);
             alexoft.Minebackup.DirUtils.deleteDirectory(new File(this.srcDir));
         } catch (Exception ex) {
             this.plugin.logException(ex,this.destDir);

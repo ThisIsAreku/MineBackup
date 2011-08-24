@@ -34,7 +34,7 @@ public class Backups extends Thread {
     public void MakeBackup() {
         try {
             this.plugin.log(Level.INFO, "Starting backup...");
-            for (String w:plugin.worlds) {
+            for (String w:plugin.config.worlds) {
                 World world = plugin.getServer().getWorld(w);
 
                 if (world == null) {
@@ -58,7 +58,7 @@ public class Backups extends Thread {
             } else {
                 /*this.plugin.log(Level.INFO,
                         "Backing up '" + world.getName() + "'...");*/
-                File tempDir = new File(this.plugin.bckTempDir, String.valueOf(Math.random()));
+                File tempDir = new File(this.plugin.config.bckTempDir, String.valueOf(Math.random()));
 	
                 tempDir.mkdirs();
                 copyWorld(world, tempDir);
@@ -71,19 +71,19 @@ public class Backups extends Thread {
     
     public void compressDir(File tempDir,String worldName) {
     	String BACKUP_NAME = getBackupName();
-    	if(!new File(this.plugin.bckDir + "/" + worldName).exists()) new File(this.plugin.bckDir + "/" + worldName).mkdirs();
-        if (this.plugin.compressionEnabled) {
+    	if(!new File(this.plugin.config.bckDir + "/" + worldName).exists()) new File(this.plugin.config.bckDir + "/" + worldName).mkdirs();
+        if (this.plugin.config.compressionEnabled) {
             this.plugin.log(Level.INFO, "\tCompressing...");
             this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
                     this.plugin,
                     new ZipDir(this.plugin, this, tempDir.getPath(),
-                    this.plugin.bckDir + "/" + worldName + "/" + BACKUP_NAME + ".zip"));
+                    this.plugin.config.bckDir + "/" + worldName + "/" + BACKUP_NAME + ".zip"));
         } else {
             this.plugin.log(Level.INFO, "\tCopying...");
             this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
                     this.plugin,
                     new CopyDir(this.plugin, this, tempDir.getPath(),
-                    this.plugin.bckDir + "/" + worldName + "/" + BACKUP_NAME));
+                    this.plugin.config.bckDir + "/" + worldName + "/" + BACKUP_NAME));
     		
         }
     }
@@ -122,19 +122,16 @@ public class Backups extends Thread {
         plugin.log(Level.INFO, "Done !");
         this.plugin.getServer().dispatchCommand(
                 new ConsoleCommandSender(this.plugin.getServer()), "save-on");
-        this.plugin.getServer().broadcastMessage(this.plugin.msg_BackupEnded);
+    	SendMessage(this.plugin.config.msg_BackupEnded); 
         this.plugin.isBackupStarted = false;
     }
     
     private void backupRun() {
         this.plugin.isBackupStarted = true;
         if (this.userStarted) {
-            this.plugin.getServer().broadcastMessage(
-                    this.plugin.msg_BackupStarted.replaceAll("%player%",
-                    this.userName));
+        	SendMessage(this.plugin.config.msg_BackupStarted.replaceAll("%player%", this.userName));                  
         } else {
-            this.plugin.getServer().broadcastMessage(
-                    this.plugin.msg_BackupStarted);
+        	SendMessage(this.plugin.config.msg_BackupStarted); 
         }
         this.plugin.getServer().dispatchCommand(
                 new ConsoleCommandSender(this.plugin.getServer()), "save-off");
@@ -143,20 +140,24 @@ public class Backups extends Thread {
         this.MakeBackup();
         afterRun();
     }
+    
+    private void SendMessage(String m){
+    	if(this.plugin.config.msg_enable) this.plugin.getServer().broadcastMessage(m);
+    }
 
     @Override
     public void run() {
         try {
-            if (this.plugin.pauseWhenNoPlayers) {
+            if (this.plugin.config.pauseWhenNoPlayers) {
                 if (this.plugin.getServer().getOnlinePlayers().length > 0) {
-                    this.plugin.isBackupDelayed = false;
+                    this.plugin.config.isBackupDelayed = false;
                     backupRun();
                 } else {
-                    this.plugin.isBackupDelayed = true;
+                    this.plugin.config.isBackupDelayed = true;
                     this.plugin.log("No players online, backup delayed");
                 }
             } else {
-                this.plugin.isBackupDelayed = false;
+                this.plugin.config.isBackupDelayed = false;
                 backupRun();
             }
         } catch (Exception ex) {
