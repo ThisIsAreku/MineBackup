@@ -4,6 +4,9 @@ package alexoft.Minebackup;
 import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 
 import org.bukkit.World;
@@ -62,28 +65,31 @@ public class Backups extends Thread {
 	
                 tempDir.mkdirs();
                 copyWorld(world, tempDir);
-                compressDir(tempDir, world.getName());
+                compressDir(tempDir, world);
             }
         } catch (Exception ex) {
             this.plugin.logException(ex);              
         }
     }
     
-    public void compressDir(File tempDir,String worldName) {
-    	String BACKUP_NAME = getBackupName();
-    	if(!new File(this.plugin.config.bckDir + "/" + worldName).exists()) new File(this.plugin.config.bckDir + "/" + worldName).mkdirs();
+    public void compressDir(File tempDir,World world) {
+    	String BACKUP_NAME = new File(this.plugin.config.bckDir, getBackupName(world)).toString();
+    	int last = BACKUP_NAME.lastIndexOf(File.separator);
+    	String dir = BACKUP_NAME.substring(0, last);
+    	String file = BACKUP_NAME.substring(last+1);
+    	if(!new File(dir).exists()) new File(dir).mkdirs();
         if (this.plugin.config.compressionEnabled) {
             this.plugin.log(Level.INFO, "\tCompressing...");
             this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
                     this.plugin,
                     new ZipDir(this.plugin, this, tempDir.getPath(),
-                    this.plugin.config.bckDir + "/" + worldName + "/" + BACKUP_NAME + ".zip"));
+                    		dir + "/" + file + ".zip"));
         } else {
             this.plugin.log(Level.INFO, "\tCopying...");
             this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(
                     this.plugin,
                     new CopyDir(this.plugin, this, tempDir.getPath(),
-                    this.plugin.config.bckDir + "/" + worldName + "/" + BACKUP_NAME));
+                    		dir + "/" + file));
     		
         }
     }
@@ -108,14 +114,24 @@ public class Backups extends Thread {
         }
         return r;
     }
-    private String getBackupName() {
+    private String getBackupName(World world) {
         Calendar today = Calendar.getInstance();
-        return format(today.get(Calendar.YEAR)) + "-" + 
-        		format(today.get(Calendar.MONTH) + 1) + "-" + 
-        		format(today.get(Calendar.DAY_OF_MONTH)) + "-" + 
-        		format(today.get(Calendar.HOUR_OF_DAY)) + "-" +
-                format(today.get(Calendar.MINUTE)) + "-" +
-                format(today.get(Calendar.SECOND));
+    	Map<String, String> formats = new HashMap<String, String>();
+    	formats.put("%Y", format(today.get(Calendar.YEAR)));
+    	formats.put("%M", format(today.get(Calendar.MONTH)));
+    	formats.put("%D", format(today.get(Calendar.DAY_OF_MONTH)));
+    	formats.put("%H", format(today.get(Calendar.HOUR_OF_DAY)));
+    	formats.put("%m", format(today.get(Calendar.MINUTE)));
+    	formats.put("%S", format(today.get(Calendar.SECOND)));
+    	formats.put("%W", world.getName());
+    	formats.put("%U", world.getUID().toString());
+    	formats.put("%s", String.valueOf(world.getSeed()));
+    	
+    	String fname = this.plugin.config.bckFormat;
+    	for(Entry<String, String> entry : formats.entrySet())
+    	    fname = fname.replaceAll(entry.getKey(), entry.getValue());
+    	
+    	return fname;
     }
 
     public void afterRun() {

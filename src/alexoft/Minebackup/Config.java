@@ -3,9 +3,8 @@ package alexoft.Minebackup;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.zip.Deflater;
 import java.util.zip.ZipOutputStream;
@@ -17,56 +16,76 @@ import org.bukkit.util.config.Configuration;
 public class Config {
 	private MineBackup						plugin;
     private Configuration                   cfg;
+    public boolean							isBackupDelayed;
+    
     public Config(MineBackup plugin){
     	this.plugin = plugin;
         loadConfig();
     }
+    /* configuration fields */
+    public List<String>                     worlds;
 
     public String                           bckDir;
     public String                           bckTempDir;
+    public String                           bckFormat;
+    
     public long                             interval;
     public long                             firstDelay;
     public long                             daystokeep;
-    public List<String>                     worlds;
+    
     public boolean                          pauseWhenNoPlayers;
+    public boolean							backupPlugins;
+    public boolean							debug;
+    
     public boolean							msg_enable;
     public String							msg_BackupStarted;
     public String							msg_BackupEnded;
     public String							msg_BackupStartedUser;
-    public boolean							isBackupDelayed;
+    
     public boolean							compressionEnabled;
     public int								compressionMode;
     public int								compressionLevel;
-    public boolean							backupPlugins;
-    public boolean							debug;
+    /* end configuration fields */
     
     public void loadConfig() {
     	try{
         	this.plugin.log("Loading configuration...");
 	        boolean rewrite = false;
 	        String[] allowedKeys = new String[] {
-	            "worlds", "backup-dir", "backup-temp-dir", "interval", "delay", "days-to-keep",
-	            "pause-when-no-players", "messages.backup-started",
-	            "messages.backup-started-user", "messages.backup-ended",
-	            "messages.enabled", "compression.enabled", "compression.level",
-	            "compression.mode", "backup-plugins", "debug"};
+	            "worlds",
+	            
+	            "backup.dir", "backup.temp-dir", "backup.format",
+	            
+	            "time.interval", "time.delay", "time.days-to-keep",
+	            
+	            "options.pause-when-no-players", "options.backup-plugins", "options.debug",
+	            
+	            "messages.backup-started", "messages.backup-started-user", "messages.backup-ended", "messages.enabled",
+	            
+	            "compression.enabled", "compression.level", "compression.mode"};
 	
 	        cfg = new Configuration(new File(this.plugin.getDataFolder() + "/config.yml"));
 	        cfg.load();
+	        
 	        worlds = cfg.getStringList("worlds", new ArrayList<String>());
-	        bckDir = cfg.getString("backup-dir", null);
-	        bckTempDir = cfg.getString("backup-temp-dir", null);
-	        interval = cfg.getInt("interval", -1);
-	        firstDelay = cfg.getInt("delay", -1);
-	        daystokeep = cfg.getInt("days-to-keep", -1);
-	        debug = cfg.getBoolean("debug", false);
-	        pauseWhenNoPlayers = cfg.getBoolean("pause-when-no-players", true);
+	        
+	        bckDir = cfg.getString("backup.dir", "minebackup");
+	        bckTempDir = cfg.getString("backup.temp-dir", "minebackup_temp");
+	        bckFormat = cfg.getString("backup.format", "%W/%Y-%M-%D_%H-%m-%S");
+	        
+	        interval = cfg.getInt("time.interval", -1);
+	        firstDelay = cfg.getInt("time.delay", -1);
+	        daystokeep = cfg.getInt("time.days-to-keep", -1);
+	        
+	        debug = cfg.getBoolean("options.debug", false);	        
+	        pauseWhenNoPlayers = cfg.getBoolean("options.pause-when-no-players", true);
+	        backupPlugins = cfg.getBoolean("options.backup-plugins", true);
 
 	        msg_enable = cfg.getBoolean("messages.enabled", true);
-	        msg_BackupEnded = cfg.getString("messages.backup-ended", null);
-	        msg_BackupStarted = cfg.getString("messages.backup-started", null);
+	        msg_BackupEnded = cfg.getString("messages.backup-ended", ChatColor.GREEN + "[MineBackup] Backup ended");
+	        msg_BackupStarted = cfg.getString("messages.backup-started", ChatColor.GREEN + "[MineBackup] Backup started");
 	        msg_BackupStartedUser = cfg.getString("messages.backup-started-user",
-	                null);
+	        		ChatColor.GREEN + "[MineBackup] Backup started by %player%");
 	        
 	        compressionEnabled = cfg.getBoolean("compression.enabled", true);
 	        String s_compressionMode = cfg.getString("compression.mode", null);
@@ -75,15 +94,11 @@ public class Config {
 	        compressionLevel = Deflater.BEST_COMPRESSION;
 	        compressionMode = ZipOutputStream.DEFLATED;
 	    	
-	        backupPlugins = cfg.getBoolean("backup-plugins", true);
 	    			
 	        int i = 0;
-	        Set<String> cles = cfg.getAll().keySet();
-	        Iterator<String> it = cles.iterator();
-	
-	        while (it.hasNext()) {
-	            String key = it.next();
-	
+	        String key;
+	    	for(Entry<String, Object> entry : cfg.getAll().entrySet()){
+	    		key = entry.getKey();
 	            if (!Arrays.asList(allowedKeys).contains(key)) {
 	                cfg.removeProperty(key);
 	                i++;
@@ -96,7 +111,6 @@ public class Config {
 	        
 	        if (compressionEnabled) {
 	            if (s_compressionLevel == null) {
-	            	this.plugin.log(Level.WARNING, "Creating 'compression.level' config...");
 	                s_compressionLevel = "BEST_COMPRESSION";
 	                cfg.setProperty("compression.level", s_compressionLevel);
 	                rewrite = true;
@@ -111,7 +125,6 @@ public class Config {
 	            }
 	        
 	            if (s_compressionMode == null) {
-	            	this.plugin.log(Level.WARNING, "Creating 'compression.mode' config...");
 	                s_compressionMode = "DEFLATED";
 	                cfg.setProperty("compression.mode", s_compressionMode);
 	                rewrite = true;
@@ -119,7 +132,6 @@ public class Config {
 	            }
 	        }
 	        if (worlds.isEmpty()) {
-	        	this.plugin.log(Level.WARNING, "Creating 'worlds' config...");
 	            for (World w : this.plugin.getServer().getWorlds()) {
 	                worlds.add(w.getName());
 	            }
@@ -127,61 +139,21 @@ public class Config {
 	            rewrite = true;
 	        }
 	
-	        if (bckDir == null) {
-	        	this.plugin.log(Level.WARNING, "Creating 'backup-dir' config...");
-	            bckDir = "minebackup";
-	            cfg.setProperty("backup-dir", bckDir);
-	            rewrite = true;
-	        }
-	
-	        if (bckTempDir == null) {
-	        	this.plugin.log(Level.WARNING, "Creating 'backup-temp-dir' config...");
-	            bckTempDir = "minebackup_temp";
-	            cfg.setProperty("backup-temp-dir", bckTempDir);
-	            rewrite = true;
-	        }
-	
 	        if (interval <= 0) {
-	        	this.plugin.log(Level.WARNING, "Creating 'interval' config...");
 	            interval = 3600;
-	            cfg.setProperty("interval", interval);
+	            cfg.setProperty("time.interval", interval);
 	            rewrite = true;
 	        }
 	
 	        if (firstDelay < 0) {
-	        	this.plugin.log(Level.WARNING, "Creating 'delay' config...");
 	            firstDelay = 10;
-	            cfg.setProperty("delay", firstDelay);
+	            cfg.setProperty("time.delay", firstDelay);
 	            rewrite = true;
 	        }
 	
 	        if (daystokeep < 0) {
-	        	this.plugin.log(Level.WARNING, "Creating 'days-to-keep' config...");
 	            daystokeep = 5;
-	            cfg.setProperty("days-to-keep", firstDelay);
-	            rewrite = true;
-	        }
-	        if (msg_BackupStarted == null) {
-	        	this.plugin.log(Level.WARNING, "Creating 'messages.backup-started' config...");
-	            msg_BackupStarted = ChatColor.GREEN + "[MineBackup] Backup started";
-	            cfg.setProperty("messages.backup-started", msg_BackupStarted);
-	            rewrite = true;
-	        }
-	
-	        if (msg_BackupStartedUser == null) {
-	        	this.plugin.log(Level.WARNING,
-	                    "Creating 'messages.backup-started-user' config...");
-	            msg_BackupStartedUser = ChatColor.GREEN
-	                    + "[MineBackup] Backup started by %player%";
-	            cfg.setProperty("messages.backup-started-user",
-	                    msg_BackupStartedUser);
-	            rewrite = true;
-	        }
-	
-	        if (msg_BackupEnded == null) {
-	        	this.plugin.log(Level.WARNING, "Creating 'messages.backup-ended' config...");
-	            msg_BackupEnded = ChatColor.GREEN + "[MineBackup] Backup ended";
-	            cfg.setProperty("messages.backup-ended", msg_BackupEnded);
+	            cfg.setProperty("time.days-to-keep", firstDelay);
 	            rewrite = true;
 	        }
 	        

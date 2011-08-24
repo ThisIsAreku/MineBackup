@@ -1,7 +1,7 @@
 name: MineBackup
 main: alexoft.Minebackup.MineBackup
 author: ThisIsAreku
-version: 0.4.7.5
+version: 0.4.8
 description: Auto-backup your world(s) !
 commands:
     mbck:
