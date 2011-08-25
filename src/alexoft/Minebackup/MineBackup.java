@@ -2,10 +2,15 @@
 package alexoft.Minebackup;
 
 
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -82,7 +87,34 @@ public class MineBackup extends JavaPlugin {
                 manualBackup);
     }
 
-    
+
+    private String format(int i) {
+        String r = String.valueOf(i);
+
+        if (r.length() == 1) {
+            r = "0" + r;
+        }
+        return r;
+    }
+    public String getBackupName(World world) {
+        Calendar today = Calendar.getInstance();
+    	Map<String, String> formats = new HashMap<String, String>();
+    	formats.put("%Y", format(today.get(Calendar.YEAR)));
+    	formats.put("%M", format(today.get(Calendar.MONTH)));
+    	formats.put("%D", format(today.get(Calendar.DAY_OF_MONTH)));
+    	formats.put("%H", format(today.get(Calendar.HOUR_OF_DAY)));
+    	formats.put("%m", format(today.get(Calendar.MINUTE)));
+    	formats.put("%S", format(today.get(Calendar.SECOND)));
+    	formats.put("%W", world.getName());
+    	formats.put("%U", world.getUID().toString());
+    	formats.put("%s", String.valueOf(world.getSeed()));
+    	
+    	String fname = this.config.bckFormat;
+    	for(Entry<String, String> entry : formats.entrySet())
+    	    fname = fname.replaceAll(entry.getKey(), entry.getValue());
+    	
+    	return fname;
+    }
 
     public void log(Level level, String l) {
         this.getServer().getLogger().log(level, "[MineBackup] " + l);

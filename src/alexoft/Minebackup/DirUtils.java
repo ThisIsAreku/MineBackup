@@ -43,8 +43,8 @@ public class DirUtils {
         	if(path.isDirectory()) {
         		deleteDirectory(path);
         	}
-           resultat &= path.delete(); 
         } 
+        resultat &= path.delete();
         return(resultat); 
     }
 

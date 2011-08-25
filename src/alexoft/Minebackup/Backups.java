@@ -3,10 +3,6 @@ package alexoft.Minebackup;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 
 import org.bukkit.World;
@@ -73,7 +69,7 @@ public class Backups extends Thread {
     }
     
     public void compressDir(File tempDir,World world) {
-    	String BACKUP_NAME = new File(this.plugin.config.bckDir, getBackupName(world)).toString();
+    	String BACKUP_NAME = new File(this.plugin.config.bckDir, this.plugin.getBackupName(world)).toString();
     	int last = BACKUP_NAME.lastIndexOf(File.separator);
     	String dir = BACKUP_NAME.substring(0, last);
     	String file = BACKUP_NAME.substring(last+1);
@@ -104,34 +100,6 @@ public class Backups extends Thread {
             alexoft.Minebackup.DirUtils.deleteDirectory(tempDir);
             throw new IOException();
         }
-    }
-
-    private String format(int i) {
-        String r = String.valueOf(i);
-
-        if (r.length() == 1) {
-            r = "0" + r;
-        }
-        return r;
-    }
-    private String getBackupName(World world) {
-        Calendar today = Calendar.getInstance();
-    	Map<String, String> formats = new HashMap<String, String>();
-    	formats.put("%Y", format(today.get(Calendar.YEAR)));
-    	formats.put("%M", format(today.get(Calendar.MONTH)));
-    	formats.put("%D", format(today.get(Calendar.DAY_OF_MONTH)));
-    	formats.put("%H", format(today.get(Calendar.HOUR_OF_DAY)));
-    	formats.put("%m", format(today.get(Calendar.MINUTE)));
-    	formats.put("%S", format(today.get(Calendar.SECOND)));
-    	formats.put("%W", world.getName());
-    	formats.put("%U", world.getUID().toString());
-    	formats.put("%s", String.valueOf(world.getSeed()));
-    	
-    	String fname = this.plugin.config.bckFormat;
-    	for(Entry<String, String> entry : formats.entrySet())
-    	    fname = fname.replaceAll(entry.getKey(), entry.getValue());
-    	
-    	return fname;
     }
 
     public void afterRun() {
