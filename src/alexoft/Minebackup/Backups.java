@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import org.bukkit.World;
-import org.bukkit.command.ConsoleCommandSender;
 
 
 /**
@@ -104,8 +103,7 @@ public class Backups extends Thread {
 
     public void afterRun() {
         plugin.log(Level.INFO, "Done !");
-        this.plugin.getServer().dispatchCommand(
-                new ConsoleCommandSender(this.plugin.getServer()), "save-on");
+        this.plugin.getServer().dispatchCommand(this.plugin.getServer().getConsoleSender(), "save-on");
     	SendMessage(this.plugin.config.msg_BackupEnded); 
         this.plugin.isBackupStarted = false;
     }
@@ -117,10 +115,8 @@ public class Backups extends Thread {
         } else {
         	SendMessage(this.plugin.config.msg_BackupStarted); 
         }
-        this.plugin.getServer().dispatchCommand(
-                new ConsoleCommandSender(this.plugin.getServer()), "save-off");
-        this.plugin.getServer().dispatchCommand(
-                new ConsoleCommandSender(this.plugin.getServer()), "save-all");
+        this.plugin.getServer().dispatchCommand(this.plugin.getServer().getConsoleSender(), "save-off");
+        this.plugin.getServer().dispatchCommand(this.plugin.getServer().getConsoleSender(), "save-all");
         this.MakeBackup();
         afterRun();
     }
